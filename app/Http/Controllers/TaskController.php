@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\TaskResource;
 use Illuminate\Http\Request;
 use App\Models\Task;
+
 use App\Models\TaskStatus;
+use Illuminate\Container\Attributes\Tag;
+use Illuminate\Support\Facades\Cache;
 
 class TaskController extends Controller
 {
@@ -13,13 +18,23 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all();
+
+        $tasks = Cache::remember('tasks', 60, function () {
+            return Task::with('status')->get()->where('user_id', Auth::user()->id);
+        });
+
 
         if ($tasks->isEmpty()) {
-            return response()->json(['message' => 'No tasks found', 'tasks' => '[]'], 200);
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Task not found',
+                'code'    => 404,
+
+            ], 404);
         }
 
-        return response()->json($tasks);
+        return  TaskResource::collection(Task::with('status')->get()->where('user_id', Auth::user()->id));
     }
 
     /**
@@ -29,16 +44,22 @@ class TaskController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
-            // 'description' => 'required|string',
+            'description' => 'required|string',
         ]);
-        $defaultStatus = 3; // Assuming 3 is the default status ID
+        $defaultStatus = 3;
         $request->merge(['status_id' => $defaultStatus]);
-        $user_id = auth()->user()->id;
-        
-        $request->merge(['user_id' => $user_id]);
-        $task = Task::create($request->all());
+        $user_id = Auth::user()->id;
 
-        return \response()->json(['message' => 'Task created successfully'], 201);
+        $request->merge(['user_id' => $user_id]);
+        Task::create($request->all());
+
+
+        return response()->json([
+            'success' => true,
+            'status'  => 'success',
+            'message' => 'Task created successfully',
+            'code'    => 201, 
+        ], 201);
     }
 
     /**
@@ -46,14 +67,23 @@ class TaskController extends Controller
      */
     public function show(string $id)
     {
-        $task = Task::find($id);
+
+        $task = Task::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->with('status')
+            ->firstOrFail();
+
         if (!$task) {
-            return response()->json(['message' => 'Task not found'], 404);
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Task not found',
+                'code'    => 404,
+            
+            ], 404);
         }
-        return response()->json($task);
+        return new TaskResource($task);
     }
-
-
 
 
     public function status(Request $request, string $id)
@@ -96,7 +126,27 @@ class TaskController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $task = Task::where('id', $id)->where('user_id', Auth::id())->first();
+        if (!$task) {
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Task not found',
+                'code'    => 404,
+            ], 404);
+        }
+        $request->validate([
+            'title' => 'required|string',
+            'description' => 'required|string',
+
+        ]);
+        $task->update($request->only(['title', 'description', "priority", "status_id"]));
+        return response()->json([
+            'success' => true,
+            'status'  => 'success',
+            'message' => 'Task updated successfully',
+            'code'    => 200,
+        ], 200);
     }
 
     /**
@@ -106,9 +156,19 @@ class TaskController extends Controller
     {
         $task = Task::find($id);
         if (!$task) {
-            return response()->json(['message' => 'Task not found'], 404);
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Task not found',
+                'code'    => 404,
+            ], 404);
         }
         $task->delete();
-        return response()->json(['message' => 'Task deleted successfully'], 200);
+        return response()->json([
+            'success' => true,
+            'status'  => 'success',
+            'message' => 'Task deleted successfully',
+            'code'    => 200,
+        ], 200);
     }
 }
