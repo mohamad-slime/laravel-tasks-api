@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\AuthResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -73,33 +74,35 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation error',
+                'code' => 422,
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        $credentials = $request->only('email', 'password');
+        $user = User::where('email', $request->email)->first();
 
-        if ( !Auth::attempt($credentials)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized',
+                'message' => 'Invalid credentials',
+                'code' => 401
             ], 401);
         }
 
-
-        
-
-        $user = Auth::user();
         $tokenResult = $user->createToken('auth_token', [], now()->addHours(1));
 
         $accessToken = $tokenResult->plainTextToken;
 
         return response()->json([
             'status' => 'success',
-            'user' => $user,
-            'access_token' => $accessToken,
-            'token_type' => 'Bearer',
-            'expires_in' => $tokenResult->accessToken->expires_at,
+            'message' => 'Login successful',
+            'data' => [
+                'user' => new AuthResource($user),
+                'token_type' => 'Bearer',
+                'access_token' => $accessToken,
+                'expires_in' => $tokenResult->accessToken->expires_at,
+            ],
+
         ]);
     }
 
@@ -109,9 +112,15 @@ class AuthController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function me(Request $request)
+
     {
+        return response()->json([
+
+            'status' => 'success',
+            'message' => 'User retrieved successfully',
+            'data' =>new AuthResource($request->user()),
         
-        return response()->json($request->user());
+        ],200);
     }
 
     /**
@@ -121,38 +130,14 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $user = auth()->user();
-        $user->tokens()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
-    }
 
-    /**
-     * Refresh a token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function refresh()
-    {
-
-        return $this->respondWithToken(Auth::user());
-    }
-
-    /**
-     * Get the token array structure.
-     *
-     * @param  string $token
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function respondWithToken($token)
-    {
+        $request->user()?->currentAccessToken()?->delete();
         return response()->json([
             'status' => 'success',
-            'user' => Auth::user(),
-            'authorization' => [
-                'token' => $token,
-                'type' => 'bearer',
-                'expires_in' => Auth::user()->token()->expires_at(),
-            ]
-        ]);
+            'message' => 'User logged out successfully',
+        ], 200);
     }
+
+
+ 
 }
