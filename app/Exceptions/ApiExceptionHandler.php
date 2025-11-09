@@ -28,7 +28,8 @@ class ApiExceptionHandler
         MethodNotAllowedHttpException::class => 'handleMethodNotAllowedHttpException',
         HttpException::class => 'handleHttpException',
         QueryException::class => 'handleQueryException',
-        AccessDeniedHttpException::class => 'handleAuthenticationException'
+        AccessDeniedHttpException::class => 'handleAuthenticationException',
+        \Exception::class => 'handleGenericException' // Fallback handler
     ];
 
 
@@ -46,7 +47,7 @@ class ApiExceptionHandler
                 'status' => 401,
                 'message' => $e->getMessage(),
             ]
-        ]);
+        ], 401);
     }
 
     public function handleAuthorizationException(AuthorizationException $e, Request $request): JsonResponse
