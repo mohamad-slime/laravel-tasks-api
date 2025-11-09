@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\Task;
 use App\Models\User;
-use App\Models\TaskStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TaskFactory extends Factory
