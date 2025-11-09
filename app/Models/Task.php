@@ -2,21 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
-    protected $table = 'task';
-    protected $status = ['new', 'in_progress', 'done'];
-    protected $fillable = ['title','description','status_id','user_id', 'priority'];
+    use HasFactory;
 
-    public function status()
-    {
-        return $this->belongsTo(TaskStatus::class, 'status_id');
-    }
+    protected $table = 'task';
+
+    protected $fillable = [
+        'title',
+        'description',
+        'priority',
+        'status',
+        'user_id',
+        'completed_at',
+    ];
+
+    protected $dates = [
+        'completed_at',
+        'created_at',
+        'updated_at',
+    ];
+
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
+
+ 
 }
