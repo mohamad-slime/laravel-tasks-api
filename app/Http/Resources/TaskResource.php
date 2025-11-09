@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
+use App\Http\Resources\AuthResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class TaskResource extends JsonResource
@@ -14,14 +15,19 @@ class TaskResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-	    return array_merge(parent::toArray($request), [
-		    'status' => $this->whenLoaded('status', function () {
-			    return $this->status->name;
-		    }),
-	    ]);
-//	    return parent::toArray($request);
 
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'description' => $this->description,
+            'due_date' => $this->due_date,
+            'status' => $this->status,
+            'complited_at' => $this->completed_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'user_id' => $this->user_id,
+            'user_name' => $this->user->name,
+        ];
     }
-
-
+  
 }
