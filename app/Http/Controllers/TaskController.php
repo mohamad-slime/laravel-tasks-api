@@ -40,7 +40,7 @@ class TaskController extends Controller
             ->additional([
                 'success' => true,
                 'status' => 'success',
-            'message' => 'Tasks retrieved successfully',
+                'message' => 'Tasks retrieved successfully',
                 'code' => 200
             ]);
     }
@@ -55,9 +55,10 @@ class TaskController extends Controller
                 'title' => 'required|string|max:255',
                 'description' => 'required|string',
                 'priority' => 'required|in:low,medium,high',
-                'status' => 'required|in:pending,in_progress,completed',
+                'status' => 'nallable|in:pending,in_progress,completed',
                 'due_date' => 'nullable|date|after:now',
             ]);
+            $validated['status'] = $validated['status'] ?? 'pending';
 
             $task = Task::create([
                 ...$validated,
@@ -73,8 +74,8 @@ class TaskController extends Controller
             return (new TaskResource($task))
                 ->additional([
                     'success' => true,
-                'status' => 'success',
-                'message' => 'Task created successfully',
+                    'status' => 'success',
+                    'message' => 'Task created successfully',
                     'code' => 201
                 ]);
         } catch (ValidationException $e) {
@@ -113,7 +114,6 @@ class TaskController extends Controller
                 'message' => 'Task retrieved successfully',
                 'code' => 200
             ]);
-
     }
 
     /**
@@ -142,8 +142,8 @@ class TaskController extends Controller
         return (new TaskResource($task))
             ->additional([
                 'success' => true,
-            'status' => 'success',
-            'message' => 'Task updated successfully',
+                'status' => 'success',
+                'message' => 'Task updated successfully',
                 'code' => 200
             ]);
     }
