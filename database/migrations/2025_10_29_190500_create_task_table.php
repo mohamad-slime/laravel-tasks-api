@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('task', function (Blueprint $table) {
+        Schema::create('tasks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
             $table->string('title');
             $table->text('description')->nullable();
 
-            $table->foreignId('status_id')
-                ->constrained('task_statuses')
-                ->cascadeOnUpdate();
+            $table->string('status')->default('pending');
+       
 
             $table->enum('priority', ['low', 'medium', 'high'])->default('medium');
 
@@ -33,7 +32,7 @@ return new class extends Migration
 
 
 
-    
+
     /**
      * Reverse the migrations.
      */
